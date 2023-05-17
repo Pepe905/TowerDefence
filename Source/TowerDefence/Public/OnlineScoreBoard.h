@@ -3,6 +3,8 @@
 #pragma once
 
 #include "ST_ScoreData.h"
+#include "IScoreList.h"
+
 #include "JsonObjectConverter.h"
 #include <Http.h>
 
@@ -21,7 +23,14 @@ public:
     AOnlineScoreBoard();
     UPROPERTY(BlueprintReadWrite, EditAnywhere)
     TArray<FST_ScoreData> ScoreList;
-    
+    UPROPERTY(BlueprintReadWrite)
+    bool IsLoadingData;
+    UPROPERTY(BlueprintReadWrite, EditAnywhere)
+    TScriptInterface<IIScoreList> Widget;
+    UFUNCTION(BlueprintCallable)
+    void RequestScoreList();
+    UFUNCTION(BlueprintCallable)
+    void SubmitScore(FST_ScoreData score);
 
 
 protected:
@@ -29,10 +38,13 @@ protected:
     virtual void BeginPlay() override;
 
 
-    void OnProcessRequestComplete(FHttpRequestPtr request, FHttpResponsePtr response, bool success);
+    void OnProcessRequestSubmitComplete(FHttpRequestPtr request, FHttpResponsePtr response, bool success);
+    void OnProcessRequestDataComplete(FHttpRequestPtr request, FHttpResponsePtr response, bool success);
 
 public:
     // Called every frame
     virtual void Tick(float DeltaTime) override;
-
+private:
+    FHttpModule* Http;
+    FString Url;
 };

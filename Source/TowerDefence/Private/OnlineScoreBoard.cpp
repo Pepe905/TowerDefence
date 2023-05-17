@@ -3,6 +3,16 @@
 
 #include "OnlineScoreBoard.h"
 
+void CreateScoreString(FST_ScoreData score, FString& outString) {
+
+    outString = outString + "name=" + score.Name;
+    outString = outString + "&score=" + FString::FromInt(score.Score);
+    outString = outString + "&time=" + score.Time;
+    outString = outString + "&kills=" + FString::FromInt(score.Kills);
+    outString = outString + "&rounds=" + FString::FromInt(score.Rounds);
+
+
+}
 
 // Sets default values
 AOnlineScoreBoard::AOnlineScoreBoard()
@@ -12,73 +22,79 @@ AOnlineScoreBoard::AOnlineScoreBoard()
 
 
 
-
+    Http = &FHttpModule::Get();
+    Url = "http://markusdullnig.de/highScore.php?";
+    IsLoadingData = false;
 }
+
+void AOnlineScoreBoard::RequestScoreList() {
+    TSharedRef<IHttpRequest, ESPMode::ThreadSafe> request = Http->CreateRequest();
+    request->OnProcessRequestComplete().BindUObject(this, &AOnlineScoreBoard::OnProcessRequestDataComplete);
+    request->SetURL(Url);
+    request->SetVerb("GET");
+
+    request->ProcessRequest();
+}
+
+void AOnlineScoreBoard::SubmitScore(FST_ScoreData score) {
+
+    TSharedRef<IHttpRequest, ESPMode::ThreadSafe> request = Http->CreateRequest();
+
+    IsLoadingData = true;
+
+    request->OnProcessRequestComplete().BindUObject(this, &AOnlineScoreBoard::OnProcessRequestSubmitComplete);
+    request->SetURL(Url);
+    request->SetVerb("POST");
+    request->SetHeader(TEXT("Content-Type"), TEXT("application/x-www-form-urlencoded"));
+
+    FString scoreString ="";
+    CreateScoreString(score, scoreString);
+
+    request->SetContentAsString(scoreString);
+
+    request->ProcessRequest();
+}
+
+
 
 // Called when the game starts or when spawned
 void AOnlineScoreBoard::BeginPlay()
 {
     Super::BeginPlay();
 
-    
-
-
-    FHttpModule* Http = &FHttpModule::Get();
-    TSharedRef<IHttpRequest, ESPMode::ThreadSafe> request = Http->CreateRequest();
-
-   
-
-    //request->OnProcessRequestComplete().BindUObject(this, &AOnlineScoreBoard::OnProcessRequestComplete);
-    //request->SetURL("http://markusdullnig.de/highScore.php");
-    //request->SetVerb("POST");
-    //request->SetHeader(TEXT("Content-Type"),TEXT("application/x-www-form-urlencoded"));
-    //request->SetContentAsString(TEXT("name=testing999&score=10000&time=04:00:00&kills=1&rounds=4"));
-  
-    //request->ProcessRequest();
-
-    
-    TSharedRef<IHttpRequest, ESPMode::ThreadSafe> request2 = Http->CreateRequest();
-    request2->OnProcessRequestComplete().BindUObject(this, &AOnlineScoreBoard::OnProcessRequestComplete);
-    request2->SetURL("http://markusdullnig.de/highScore.php");
-    request2->SetVerb("GET");
-
-    request2->ProcessRequest();
-
 
 }
 
-void AOnlineScoreBoard::OnProcessRequestComplete(FHttpRequestPtr request, FHttpResponsePtr response, bool success)
+void AOnlineScoreBoard::OnProcessRequestSubmitComplete(FHttpRequestPtr request, FHttpResponsePtr response, bool success)
 {
-    
-
-   
-
-     if (success && request->GetVerb() =="POST")
+     if (success )
       {
           UE_LOG(LogTemp, Warning, TEXT("%s"), *response->GetContentAsString());
           
       }
-     else if (success && request->GetVerb() == "GET") {
-         FString content = *response->GetContentAsString();
-        
-         //FST_ScoreData data;
-
-         //data.ID = 1;
-         //data.Kills = 1;
-         //data.Name = "1234";
-         //data.Rounds = 2;
-         //data.Time = "01:02:03";
-
-         //ScoreList.Add(data);
-
-        FJsonObjectConverter::JsonArrayStringToUStruct(content, &ScoreList);
-
-         UE_LOG(LogTemp, Warning, TEXT("%s"), *response->GetContentAsString());
-
-
-     }
       else
       {
+          UE_LOG(LogTemp, Warning, TEXT("FAILED"));
+      }
+}
+
+void AOnlineScoreBoard::OnProcessRequestDataComplete(FHttpRequestPtr request, FHttpResponsePtr response, bool success) {
+
+    IsLoadingData = false;
+
+      if (success) {
+          FString content = *response->GetContentAsString();
+          ScoreList.Empty();
+          FJsonObjectConverter::JsonArrayStringToUStruct(content, &ScoreList);
+
+          Widget->Execute_UpdateList(Widget.GetObject());
+
+          
+
+
+          UE_LOG(LogTemp, Warning, TEXT("%s"), *response->GetContentAsString());
+          }
+      else {
           UE_LOG(LogTemp, Warning, TEXT("FAILED"));
       }
 }

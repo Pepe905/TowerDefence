@@ -67,7 +67,7 @@ void AOnlineScoreBoard::BeginPlay()
 
 void AOnlineScoreBoard::OnProcessRequestSubmitComplete(FHttpRequestPtr request, FHttpResponsePtr response, bool success)
 {
-     if (success )
+    /* if (success )
       {
           UE_LOG(LogTemp, Warning, TEXT("%s"), *response->GetContentAsString());
           
@@ -75,7 +75,7 @@ void AOnlineScoreBoard::OnProcessRequestSubmitComplete(FHttpRequestPtr request, 
       else
       {
           UE_LOG(LogTemp, Warning, TEXT("FAILED"));
-      }
+      }*/
 }
 
 void AOnlineScoreBoard::OnProcessRequestDataComplete(FHttpRequestPtr request, FHttpResponsePtr response, bool success) {
@@ -92,11 +92,11 @@ void AOnlineScoreBoard::OnProcessRequestDataComplete(FHttpRequestPtr request, FH
           
 
 
-          UE_LOG(LogTemp, Warning, TEXT("%s"), *response->GetContentAsString());
+          //UE_LOG(LogTemp, Warning, TEXT("%s"), *response->GetContentAsString());
           }
-      else {
+     /* else {
           UE_LOG(LogTemp, Warning, TEXT("FAILED"));
-      }
+      }*/
 }
 
 
